@@ -1,0 +1,21 @@
+# 依存関係
+node_modules/
+
+# 環境変数ファイル (機密情報を含むため)
+.env
+
+# ログファイル
+logs/
+*.log
+npm-debug.log*
+
+# エディタ設定
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS生成ファイル
+.DS_Store
+Thumbs.db
