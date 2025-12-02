@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { readdirSync } from 'fs';
+import express from 'express';
 
 // .envファイルから環境変数を読み込む
 dotenv.config();
@@ -118,3 +119,90 @@ process.on('unhandledRejection', (error) => {
  * 環境変数からトークンを取得して、Botを起動します
  */
 client.login(process.env.DISCORD_TOKEN);
+
+/**
+ * Webhook用のExpressサーバーを設定
+ * 外部サービスからのWebhookを受け取り、指定されたDiscordチャンネルにメッセージを送信します
+ */
+const app = express();
+app.use(express.json()); // JSONボディをパース
+
+/**
+ * Webhookエンドポイント
+ * POST /webhook にリクエストを送信することで、Discordチャンネルにメッセージを送信できます
+ *
+ * リクエストボディの形式:
+ * {
+ *   "message": "送信するメッセージ内容",
+ *   "channelId": "送信先チャンネルID（オプション）"
+ * }
+ */
+app.post('/webhook', async (req, res) => {
+  try {
+    const { message, channelId } = req.body;
+
+    // メッセージが指定されていない場合
+    if (!message) {
+      return res.status(400).json({
+        success: false,
+        error: 'メッセージが指定されていません'
+      });
+    }
+
+    // チャンネルIDを取得（リクエストで指定されていない場合は環境変数から取得）
+    const targetChannelId = channelId || process.env.WEBHOOK_CHANNEL_ID;
+
+    if (!targetChannelId) {
+      return res.status(400).json({
+        success: false,
+        error: 'チャンネルIDが指定されていません'
+      });
+    }
+
+    // チャンネルを取得
+    const channel = await client.channels.fetch(targetChannelId);
+
+    if (!channel || !channel.isTextBased()) {
+      return res.status(404).json({
+        success: false,
+        error: 'チャンネルが見つからないか、テキストチャンネルではありません'
+      });
+    }
+
+    // メッセージを送信
+    await channel.send(message);
+
+    console.log(`📨 Webhookからメッセージ送信: チャンネルID ${targetChannelId}`);
+
+    res.json({
+      success: true,
+      message: 'メッセージを送信しました',
+      channelId: targetChannelId
+    });
+
+  } catch (error) {
+    console.error('❌ Webhook処理エラー:', error);
+    res.status(500).json({
+      success: false,
+      error: 'メッセージの送信に失敗しました'
+    });
+  }
+});
+
+/**
+ * ヘルスチェックエンドポイント
+ * サーバーが正常に動作しているか確認するためのエンドポイント
+ */
+app.get('/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    bot: client.user ? client.user.tag : 'not ready'
+  });
+});
+
+// Expressサーバーを起動
+const PORT = process.env.WEBHOOK_PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`🌐 Webhookサーバーが起動しました: http://localhost:${PORT}`);
+  console.log(`📍 Webhookエンドポイント: http://localhost:${PORT}/webhook`);
+});
