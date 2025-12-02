@@ -8,6 +8,7 @@ Discord.js v14を使用したDiscord Botの作り方を学ぶハンズオン用�
 - [事前準備](#事前準備)
 - [セットアップ手順](#セットアップ手順)
 - [Botの起動方法](#botの起動方法)
+  - [Dockerでの起動（推奨）](#dockerでの起動推奨)
 - [実装されている機能](#実装されている機能)
 - [プロジェクト構成](#プロジェクト構成)
 - [コマンドの追加方法](#コマンドの追加方法)
@@ -153,6 +154,51 @@ npm run dev
 📊 3個のコマンドが登録されています
 ```
 
+### Dockerでの起動（推奨）
+
+Dockerを使用することで、環境に依存せずにBotを実行できます。
+
+#### 前提条件
+- Docker
+- Docker Compose
+
+#### コマンド登録（初回のみ）
+
+まず、コマンドをDiscordに登録する必要があります:
+
+```bash
+# 一時的なコンテナでコマンド登録を実行
+docker-compose run --rm discord-bot npm run deploy-commands
+```
+
+#### Botの起動
+
+```bash
+# バックグラウンドで起動
+docker-compose up -d
+
+# ログを確認
+docker-compose logs -f
+
+# 停止
+docker-compose down
+```
+
+#### 開発時のTips
+
+ソースコードの変更を即座に反映させたい場合は、[docker-compose.yml](docker-compose.yml) の `volumes` セクションのコメントを解除してください:
+
+```yaml
+volumes:
+  - ./src:/app/src:ro
+```
+
+その後、開発モードで起動:
+
+```bash
+docker-compose run --rm discord-bot npm run dev
+```
+
 ---
 
 ## 実装されている機能
@@ -218,6 +264,9 @@ discord-bot-handson/
 ├── .env                   # 環境変数（Git管理外）
 ├── .env.example           # 環境変数のサンプル
 ├── .gitignore            # Git管理対象外ファイル
+├── .dockerignore         # Docker管理対象外ファイル
+├── Dockerfile            # Dockerイメージ定義
+├── docker-compose.yml    # Docker Compose設定
 ├── package.json          # プロジェクト設定
 └── README.md             # このファイル
 ```
@@ -306,6 +355,29 @@ export default {
    node --version
    ```
 2. `node_modules` フォルダと `package-lock.json` を削除して、再度 `npm install` してみてください。
+
+### Docker関連のトラブル
+
+1. **コンテナが起動しない**
+   ```bash
+   # ログを確認
+   docker-compose logs discord-bot
+   ```
+
+2. **.envファイルが読み込まれない**
+   - `.env` ファイルがプロジェクトルートに存在することを確認
+   - ファイル名が正確に `.env` であることを確認（`.env.txt` などではない）
+
+3. **イメージを再ビルドしたい**
+   ```bash
+   docker-compose build --no-cache
+   docker-compose up -d
+   ```
+
+4. **コンテナ内でコマンドを実行したい**
+   ```bash
+   docker-compose exec discord-bot sh
+   ```
 
 ---
 

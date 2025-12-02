@@ -1,0 +1,35 @@
+# 依存関係（Dockerイメージ内でインストールするため）
+node_modules/
+npm-debug.log
+
+# Git関連
+.git
+.gitignore
+
+# 環境変数ファイル（docker-compose.ymlで読み込むため）
+.env
+
+# ドキュメント
+README.md
+docs/
+*.md
+
+# エディタ設定
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS生成ファイル
+.DS_Store
+Thumbs.db
+
+# ログファイル
+logs/
+*.log
+
+# Docker関連
+Dockerfile
+docker-compose.yml
+.dockerignore
